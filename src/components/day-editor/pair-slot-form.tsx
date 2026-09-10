@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { DriveViewer } from "@/components/drive-viewer";
 import { Select } from "@/components/ui/select";
 import { PAIR_TIMES, teacherSubjectOptions } from "@/lib/constants";
 import type { PairSlot } from "@/lib/types";
 
 interface PairSlotFormProps {
+  dateKey: string;
   pair: PairSlot;
   onChange: (patch: Partial<Omit<PairSlot, "pairNumber">>) => void;
 }
@@ -16,18 +18,14 @@ const selectOptions = teacherSubjectOptions.map((value) => ({
   label: value,
 }));
 
-export function PairSlotForm({ pair, onChange }: PairSlotFormProps) {
+export function PairSlotForm({ dateKey, pair, onChange }: PairSlotFormProps) {
+  const router = useRouter();
   const time = PAIR_TIMES[pair.pairNumber];
   const [viewerOpen, setViewerOpen] = useState(false);
   const hasLink = pair.driveLink.trim().length > 0;
-  const notesRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    const el = notesRef.current;
-    if (!el) return;
-    el.style.height = "0px";
-    el.style.height = `${Math.max(el.scrollHeight, 280)}px`;
-  }, [pair.notes]);
+  const hasAnswer = pair.notes.trim().length > 0;
+  const preview = pair.notes.trim().slice(0, 160);
+  const chars = pair.notes.length;
 
   return (
     <section className="space-y-2">
@@ -50,16 +48,30 @@ export function PairSlotForm({ pair, onChange }: PairSlotFormProps) {
 
         <div className="ml-4 h-px bg-gray-200" />
 
-        <div className="px-4 py-4 sm:px-5">
-          <p className="mb-2 text-[13px] text-gray-500">Ответ</p>
-          <textarea
-            ref={notesRef}
-            value={pair.notes}
-            onChange={(e) => onChange({ notes: e.target.value })}
-            placeholder="Вставь текст — переносы и отступы сохранятся…"
-            spellCheck={false}
-            className="min-h-[280px] w-full resize-none border-0 bg-transparent p-0 font-mono text-[15px] leading-[1.7] text-gray-900 outline-none placeholder:font-sans placeholder:text-gray-300 whitespace-pre-wrap break-words"
-          />
+        <div className="px-4 py-3.5">
+          <p className="mb-2 text-[13px] text-gray-500">Ответ к заданию</p>
+          {hasAnswer ? (
+            <p className="mb-3 max-h-[4.5rem] overflow-hidden whitespace-pre-wrap break-words font-mono text-[13px] leading-relaxed text-gray-600">
+              {preview}
+              {pair.notes.trim().length > 160 ? "…" : ""}
+            </p>
+          ) : (
+            <p className="mb-3 text-[15px] text-gray-300">Пока пусто</p>
+          )}
+          <button
+            type="button"
+            onClick={() =>
+              router.push(`/day/${dateKey}/pair/${pair.pairNumber}`)
+            }
+            className="min-h-[44px] w-full rounded-xl bg-[#007AFF] px-4 text-[16px] font-medium text-white active:opacity-80"
+          >
+            {hasAnswer ? "Открыть ответ" : "Писать ответ"}
+            {hasAnswer ? (
+              <span className="ml-2 font-normal text-white/80">
+                {chars.toLocaleString("ru-RU")} симв.
+              </span>
+            ) : null}
+          </button>
         </div>
 
         <div className="ml-4 h-px bg-gray-200" />

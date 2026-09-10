@@ -1,45 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createEmptyPairs } from "@/lib/constants";
+import { loadSchedule, saveSchedule } from "@/lib/schedule-storage";
 import type { DaySchedule, PairNumber, PairSlot, ScheduleMap } from "@/lib/types";
-import { createMockSchedule } from "@/data/mock";
-
-const STORAGE_KEY = "iup-college-schedule-v7";
 
 /**
  * Local state layer mimicking Firestore CRUD.
- * Swap implementations inside these functions for Firebase later:
- *   getDay  → getDoc(doc(db, "schedules", date))
- *   upsert  → setDoc(doc(db, "schedules", date), data, { merge: true })
+ * Persists to IndexedDB (with legacy localStorage migration).
  */
-function normalizeSchedule(raw: ScheduleMap): ScheduleMap {
-  const next: ScheduleMap = {};
-  for (const [date, day] of Object.entries(raw)) {
-    next[date] = {
-      date: day.date,
-      pairs: day.pairs.map((p) => ({
-        pairNumber: p.pairNumber,
-        teacherSubject: p.teacherSubject ?? "",
-        notes: p.notes ?? "",
-        driveLink: p.driveLink ?? "",
-      })),
-    };
-  }
-  return next;
-}
-
-function loadInitial(): ScheduleMap {
-  if (typeof window === "undefined") return createMockSchedule();
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return normalizeSchedule(JSON.parse(raw) as ScheduleMap);
-  } catch {
-    /* ignore */
-  }
-  return createMockSchedule();
-}
-
 function ensureDay(map: ScheduleMap, date: string): DaySchedule {
   return (
     map[date] ?? {
@@ -52,20 +21,62 @@ function ensureDay(map: ScheduleMap, date: string): DaySchedule {
 export function useSchedule() {
   const [schedule, setSchedule] = useState<ScheduleMap>({});
   const [ready, setReady] = useState(false);
+  const hydratedRef = useRef(false);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestRef = useRef<ScheduleMap>({});
 
   useEffect(() => {
-    setSchedule(loadInitial());
-    setReady(true);
+    let cancelled = false;
+    (async () => {
+      const data = await loadSchedule();
+      if (cancelled) return;
+      latestRef.current = data;
+      setSchedule(data);
+      hydratedRef.current = true;
+      setReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
-    if (!ready) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(schedule));
-    } catch {
-      /* quota / private mode */
-    }
+    if (!hydratedRef.current || !ready) return;
+    latestRef.current = schedule;
+
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      void saveSchedule(latestRef.current).catch(() => {
+        /* logged in storage layer */
+      });
+    }, 200);
+
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
   }, [schedule, ready]);
+
+  // Flush pending save on tab close / hide
+  useEffect(() => {
+    const flush = () => {
+      if (!hydratedRef.current) return;
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+      void saveSchedule(latestRef.current);
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    window.addEventListener("beforeunload", flush);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("beforeunload", flush);
+      document.removeEventListener("visibilitychange", onVisibility);
+      flush();
+    };
+  }, []);
 
   const getDay = useCallback(
     (date: string): DaySchedule => ensureDay(schedule, date),

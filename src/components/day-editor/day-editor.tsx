@@ -48,6 +48,7 @@ export function DayEditorPage({
           {day.pairs.map((pair) => (
             <PairSlotForm
               key={pair.pairNumber}
+              dateKey={dateKey}
               pair={pair}
               onChange={(patch) => onUpdatePair(pair.pairNumber, patch)}
             />
