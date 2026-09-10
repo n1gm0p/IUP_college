@@ -5,7 +5,7 @@ import { createEmptyPairs } from "@/lib/constants";
 import type { DaySchedule, PairNumber, PairSlot, ScheduleMap } from "@/lib/types";
 import { createMockSchedule } from "@/data/mock";
 
-const STORAGE_KEY = "iup-college-schedule-v5";
+const STORAGE_KEY = "iup-college-schedule-v7";
 
 /**
  * Local state layer mimicking Firestore CRUD.
@@ -17,11 +17,12 @@ function normalizeSchedule(raw: ScheduleMap): ScheduleMap {
   const next: ScheduleMap = {};
   for (const [date, day] of Object.entries(raw)) {
     next[date] = {
-      ...day,
+      date: day.date,
       pairs: day.pairs.map((p) => ({
-        ...p,
+        pairNumber: p.pairNumber,
+        teacherSubject: p.teacherSubject ?? "",
+        notes: p.notes ?? "",
         driveLink: p.driveLink ?? "",
-        status: p.status ?? "todo",
       })),
     };
   }

@@ -71,7 +71,6 @@ export function createEmptyPairs(): PairSlot[] {
     teacherSubject: "",
     notes: "",
     driveLink: "",
-    status: "todo",
   }));
 }
 

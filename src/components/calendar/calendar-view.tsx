@@ -180,22 +180,12 @@ export function CalendarView({
                         <button
                           type="button"
                           onClick={() => onSelectDay(key)}
-                          className="flex w-full items-start text-left text-[13px] leading-snug text-gray-700 active:opacity-80 lg:text-[15px] lg:leading-snug"
+                          className="w-full text-left text-[13px] leading-snug text-gray-700 active:opacity-80 lg:text-[15px] lg:leading-snug"
                         >
-                          {item.hasSubject ? (
-                            <span
-                              className={`mt-1.5 mr-2 inline-block h-2 w-2 shrink-0 rounded-full ${statusDotClass(
-                                item.status
-                              )}`}
-                              aria-hidden
-                            />
-                          ) : null}
-                          <span className="min-w-0">
-                            <span className="tabular-nums text-gray-400">
-                              {item.time}
-                            </span>{" "}
-                            <span className="break-words">{item.subject}</span>
-                          </span>
+                          <span className="tabular-nums text-gray-400">
+                            {item.time}
+                          </span>{" "}
+                          <span className="break-words">{item.subject}</span>
                         </button>
                         {item.driveLink.trim() ? (
                           <button
@@ -303,12 +293,6 @@ function Segment({
       {label}
     </button>
   );
-}
-
-function statusDotClass(status: DayPairPreview["status"]) {
-  if (status === "done") return "bg-green-500";
-  if (status === "in_progress") return "bg-yellow-500";
-  return "bg-red-500";
 }
 
 function LinkIcon() {

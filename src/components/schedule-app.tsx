@@ -61,8 +61,6 @@ export function ScheduleApp() {
           ? (p.teacherSubject.split(" — ")[1] ?? p.teacherSubject)
           : "Материал",
         driveLink: p.driveLink,
-        status: p.status ?? "todo",
-        hasSubject: Boolean(p.teacherSubject),
       }));
   };
 

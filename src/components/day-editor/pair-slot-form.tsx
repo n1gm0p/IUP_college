@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DriveViewer } from "@/components/drive-viewer";
 import { Select } from "@/components/ui/select";
 import { PAIR_TIMES, teacherSubjectOptions } from "@/lib/constants";
-import type { PairSlot, PairStatus } from "@/lib/types";
+import type { PairSlot } from "@/lib/types";
 
 interface PairSlotFormProps {
   pair: PairSlot;
@@ -16,16 +16,18 @@ const selectOptions = teacherSubjectOptions.map((value) => ({
   label: value,
 }));
 
-const STATUS_OPTIONS: { value: PairStatus; label: string }[] = [
-  { value: "todo", label: "Не начато" },
-  { value: "in_progress", label: "В процессе" },
-  { value: "done", label: "Готово" },
-];
-
 export function PairSlotForm({ pair, onChange }: PairSlotFormProps) {
   const time = PAIR_TIMES[pair.pairNumber];
   const [viewerOpen, setViewerOpen] = useState(false);
   const hasLink = pair.driveLink.trim().length > 0;
+  const notesRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const el = notesRef.current;
+    if (!el) return;
+    el.style.height = "0px";
+    el.style.height = `${Math.max(el.scrollHeight, 280)}px`;
+  }, [pair.notes]);
 
   return (
     <section className="space-y-2">
@@ -48,39 +50,15 @@ export function PairSlotForm({ pair, onChange }: PairSlotFormProps) {
 
         <div className="ml-4 h-px bg-gray-200" />
 
-        <div className="px-4 py-3.5">
-          <p className="mb-2 text-[13px] text-gray-500">Статус</p>
-          <div className="flex rounded-lg bg-gray-200/80 p-1">
-            {STATUS_OPTIONS.map((opt) => {
-              const active = pair.status === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => onChange({ status: opt.value })}
-                  className={`min-h-[36px] flex-1 rounded-md px-1 text-sm font-medium transition-colors ${
-                    active
-                      ? "bg-white text-gray-900 shadow-sm"
-                      : "bg-transparent text-gray-600"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="ml-4 h-px bg-gray-200" />
-
-        <div className="px-4 py-3.5">
-          <p className="mb-1.5 text-[13px] text-gray-500">Заметки</p>
+        <div className="px-4 py-4 sm:px-5">
+          <p className="mb-2 text-[13px] text-gray-500">Ответ</p>
           <textarea
+            ref={notesRef}
             value={pair.notes}
             onChange={(e) => onChange({ notes: e.target.value })}
-            placeholder="Домашнее задание, аудитория…"
-            rows={2}
-            className="w-full resize-none border-0 bg-transparent p-0 text-[17px] leading-snug text-gray-900 outline-none placeholder:text-gray-300"
+            placeholder="Вставь текст — переносы и отступы сохранятся…"
+            spellCheck={false}
+            className="min-h-[280px] w-full resize-none border-0 bg-transparent p-0 font-mono text-[15px] leading-[1.7] text-gray-900 outline-none placeholder:font-sans placeholder:text-gray-300 whitespace-pre-wrap break-words"
           />
         </div>
 

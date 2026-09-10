@@ -2,17 +2,14 @@
 
 export type PairNumber = 1 | 2 | 3 | 4;
 
-export type PairStatus = "todo" | "in_progress" | "done";
-
 export interface PairSlot {
   pairNumber: PairNumber;
   /** Flat value: "Teacher — Subject" or empty */
   teacherSubject: string;
+  /** Free-form answer / notes (paste-friendly) */
   notes: string;
   /** Google Drive (or any) material URL */
   driveLink: string;
-  /** Readiness: todo (default) | in_progress | done */
-  status: PairStatus;
 }
 
 export interface DaySchedule {
@@ -31,7 +28,4 @@ export interface DayPairPreview {
   time: string;
   subject: string;
   driveLink: string;
-  status: PairStatus;
-  /** False when subject is not selected — hide status dot */
-  hasSubject: boolean;
 }
